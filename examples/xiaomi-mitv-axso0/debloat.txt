@@ -12,6 +12,12 @@
 # - `svc power reboot` gets killed; reboot through adb's own reboot service instead.
 # - com.google.android.leanbacklauncher is re-enabled by the firmware at every boot, so it's not listed.
 # - Glance (com.glance.tv) puts news and ads on the lock/standby screen; with it off the screensaver is clean.
+# - Screensaver & deep sleep: Keep com.mitv.dream or com.google.android.backdrop enabled, or switch
+#   to CleanYourTV's native lightweight ClockDream screensaver:
+#     settings put secure screensaver_components com.gathin.tvhome/.ClockDream
+#   If all screensavers are disabled and idle timeout triggers, Android TV falls into deep display-off
+#   sleep, cutting power to the Bluetooth controller. The Xiaomi Bluetooth remote cannot wake the TV
+#   from that state, forcing an AC power cycle.
 # - Netflix, Prime Video and YouTube are preinstalled system apps, so they always get BOOT_COMPLETED.
 #   Other apps stay out of the boot-time rush after `am force-stop`, until someone opens them again.
 

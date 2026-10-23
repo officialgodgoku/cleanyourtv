@@ -187,6 +187,7 @@ esac
 #                         sticks: the key is routed to the launcher (HomeKeyService)
 #   RESTORE_KEY_SERVICES=1  grants WRITE_SECURE_SETTINGS, so that with restore_key_services (config.xml or a
 #                         theme) Home puts these helpers back after a force stop of the launcher
+#   SCREENSAVER=1         sets CleanYourTV ClockDream as the TV screensaver to prevent deep sleep on idle
 # TCL firmware (TclAppBoot) refuses to bind an app's accessibility service while the app is not running unless it
 # holds the AUTO_START app-op, so grant it first; other TVs do not know the op and ignore it. A service that is
 # already listed was refused while the APK was replaced, and binds again only once the list changes, so clear it,
@@ -199,5 +200,14 @@ if [ "${INPUT_KEY_SERVICE:-0}" = 1 ]; then enable_service InputKeyService; fi
 if [ "${HOME_KEY_SERVICE:-0}" = 1 ]; then enable_service HomeKeyService; fi
 if [ "${RESTORE_KEY_SERVICES:-0}" = 1 ]; then
   "$PY" -I ../tools/tv.py "pm grant com.gathin.tvhome android.permission.WRITE_SECURE_SETTINGS && echo restore-granted"
+fi
+if [ "${SCREENSAVER:-0}" = 1 ]; then
+  echo "Enabling CleanYourTV ClockDream as system screensaver..."
+  printf '%s\n' \
+    "settings put secure screensaver_components com.gathin.tvhome/.ClockDream" \
+    "settings put secure screensaver_default_component com.gathin.tvhome/.ClockDream" \
+    "settings put secure screensaver_enabled 1" \
+    "settings put secure screensaver_activate_on_sleep 1" \
+    | "$PY" -I ../tools/tv.py --batch
 fi
 echo "Installed. Press Home on the remote to see it."

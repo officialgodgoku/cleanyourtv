@@ -318,6 +318,30 @@ Things that bit us or contributors, so they don't bite you. Commands use `tools/
   launcherx is enabled it takes Home back (`set-home-activity` prints `Success` and changes nothing, and
   its home activity can't be disabled from the shell). To switch profile: `pm enable --user 0
   com.google.android.apps.tv.launcherx`, switch in Settings, then disable it again and set Home last.
+- **Black screen on idle, TV shuts down / freezes, remote unresponsive (Xiaomi Mi TV & Android TVs)**.
+  On Android TV, when the TV is left unattended, the system attempts to activate the configured daydream / screensaver
+  after the idle timeout (`screen_off_timeout`, default 5 minutes). If OEM screensaver packages such as
+  `com.google.android.backdrop` (Google Backdrop / Chromecast Ambient Mode) or `com.mitv.dream` are disabled during debloating,
+  `DreamManagerService` fails to bind. `PowerManagerService` then falls back to deep sleep (`goToSleepNoUpdateLocked`),
+  turning off display output (`Display Power: state=OFF`). On MediaTek and Amlogic smart TV SoCs (such as Xiaomi Mi TV
+  `dangal` / `MiTV-AXSO0`), deep suspend powers down the Bluetooth controller or suspends its UART interface. Because
+  the Xiaomi remote is Bluetooth-only and does not feature a dedicated hardware IR wake interrupt, the remote cannot
+  wake the TV from deep suspend, leaving the TV in an unrecoverable black-screen freeze until it is physically unplugged
+  and replugged.
+  
+  **Fix**:
+  1. Switch the system screensaver to CleanYourTV's native ultra-lightweight screensaver (`ClockDream`):
+     ```sh
+     tools/tv.py 'settings put secure screensaver_components com.gathin.tvhome/.ClockDream'
+     tools/tv.py 'settings put secure screensaver_default_component com.gathin.tvhome/.ClockDream'
+     tools/tv.py 'settings put secure screensaver_enabled 1'
+     tools/tv.py 'settings put secure screensaver_activate_on_sleep 1'
+     ```
+     (Or pass `-Screensaver` on Windows / `SCREENSAVER=1` on Linux/macOS to `build-and-install`).
+     `ClockDream` renders a lightweight drifting clock with minimal memory usage (~3 MB vs ~80 MB for Backdrop),
+     keeps the display pipeline and Bluetooth controller alive, and immediately wakes upon any remote key press.
+  2. Keep `com.mitv.dream` or `com.google.android.backdrop` enabled in debloat lists to serve as fallback dream services.
+
 - **Voice search for a song or video says "Google Assistant is having trouble processing your request"**
   once launcherx is disabled, while app commands ("open YouTube") still work. Seen on an onn 4K Streaming
   Box (`YOC`, Google TV 14, `URO4.260304.011.B1.15051976`). Google TV shows those results in its own home

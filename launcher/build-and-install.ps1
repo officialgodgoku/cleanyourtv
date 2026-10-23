@@ -8,12 +8,14 @@
 #                             input_key_keycodes and app_keys; re-pass on every install
 #        [-HomeKeyService]    remotes whose Home button sends KEYCODE_ALL_APPS (Xiaomi sticks)
 #        [-RestoreKeyServices] grants WRITE_SECURE_SETTINGS for restore_key_services (helpers back after a force stop)
+#        [-Screensaver]       sets CleanYourTV ClockDream as the TV screensaver to prevent deep sleep on idle
 param(
     [string]$TvHost = $env:TV_HOST,
     [string]$StockLauncher = '',
     [switch]$InputKeyService,
     [switch]$HomeKeyService,
-    [switch]$RestoreKeyServices
+    [switch]$RestoreKeyServices,
+    [switch]$Screensaver
 )
 $ErrorActionPreference = 'Stop'
 # Pipe plain UTF-8 to native commands; the default here prepends a BOM that corrupts the first command.
@@ -104,5 +106,14 @@ if ($InputKeyService) { Enable-Service 'InputKeyService' }
 if ($HomeKeyService) { Enable-Service 'HomeKeyService' }
 if ($RestoreKeyServices) {
     'pm grant com.gathin.tvhome android.permission.WRITE_SECURE_SETTINGS && echo restore-granted' | & $py -I ..\tools\tv.py --batch
+}
+if ($Screensaver) {
+    Write-Host 'Enabling CleanYourTV ClockDream as system screensaver...'
+    @(
+        'settings put secure screensaver_components com.gathin.tvhome/.ClockDream',
+        'settings put secure screensaver_default_component com.gathin.tvhome/.ClockDream',
+        'settings put secure screensaver_enabled 1',
+        'settings put secure screensaver_activate_on_sleep 1'
+    ) | & $py -I ..\tools\tv.py --batch
 }
 Write-Host 'Installed. Press Home on the remote to see it.'
