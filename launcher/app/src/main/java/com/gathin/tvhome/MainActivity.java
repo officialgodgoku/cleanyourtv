@@ -3100,7 +3100,28 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         // Action 3: Clean app data & cache (Pick an app)
         addTileMenuRow(rows, popup, R.drawable.ic_apps, getString(R.string.clean_app_data), () -> root.post(this::showAppCleanerDialog));
 
-        // Action 4: Storage Settings
+        // Action 4: System-wide Ad Shield (DNS-over-TLS)
+        String dnsMode = Settings.Global.getString(getContentResolver(), "private_dns_mode");
+        String dnsHost = Settings.Global.getString(getContentResolver(), "private_dns_specifier");
+        final boolean adShieldOn = "hostname".equals(dnsMode) && "dns.adguard-dns.com".equals(dnsHost);
+        String adShieldText = "Ad Shield: " + (adShieldOn ? "Active" : "Off");
+        addTileMenuRow(rows, popup, R.drawable.ic_lock, adShieldText, () -> {
+            try {
+                if (adShieldOn) {
+                    Settings.Global.putString(getContentResolver(), "private_dns_mode", "opportunistic");
+                    Settings.Global.putString(getContentResolver(), "private_dns_specifier", "");
+                    Toast.makeText(this, "Ad Shield: Disabled", Toast.LENGTH_SHORT).show();
+                } else {
+                    Settings.Global.putString(getContentResolver(), "private_dns_mode", "hostname");
+                    Settings.Global.putString(getContentResolver(), "private_dns_specifier", "dns.adguard-dns.com");
+                    Toast.makeText(this, "Ad Shield: Active (System-wide)", Toast.LENGTH_SHORT).show();
+                }
+            } catch (Exception e) {
+                Toast.makeText(this, "Requires WRITE_SECURE_SETTINGS", Toast.LENGTH_LONG).show();
+            }
+        });
+
+        // Action 5: Storage Settings
         addTileMenuRow(rows, popup, R.drawable.ic_settings, getString(R.string.storage_settings), () -> {
             open(new Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS));
         });
